@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html>
+    
+    <head>
+        <title>
+            Malicious URL Classification using Linear Discriminant Analysis (LDA)
+        </title>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px;
+            } h1, h2, h3 { color: #2c3e50; } code { background-color: #f4f4f4; padding:
+            2px 4px; font-size: 90%; color: #c7254e; } pre { background-color: #f4f4f4;
+            padding: 10px; overflow-x: auto; } img { max-width: 100%; height: auto;
+            } .code-block { background-color: #f4f4f4; padding: 10px; overflow-x: auto;
+            border-left: 3px solid #3498db; margin: 20px 0; } .figure { text-align:
+            center; margin: 20px 0; } .figure img { border: 1px solid #ddd; padding:
+            5px; } .figure-caption { margin-top: 5px; font-style: italic; color: #555;
+            }
+        </style>
+    </head>
+    
+    <body>
+        <h1>
+            Malicious URL Classification using Linear Discriminant Analysis (LDA)
+        </h1>
+        <h2>
+            Introduction
+        </h2>
+        <p>
+            Our group wishes to utilize the Malicious URL Dataset on Kaggle to train a machine learning model
+            to identify and classify potentially malicious links. The dataset has approximately 650,000 URLs,
+            including ~430,000 benign URLs, 96,000 defacement URLs, ~94,000 phishing URLs, and ~33,000
+            malware URLs [1].
+            <br> <br>
+
+            We observe related work and inspiration from the Stanford Machine Learning Final Projects [7]. The
+            project aims to classify URLs as benign or malicious, utilizing 1,000 website URLs scraped from web
+            as well as known malicious URLs from a malware database. We choose an alternative approach to
+            solve the same problem. Instead of a binary classification, we wish to utilize four categories, as
+            described in the utilized dataset, and intend to use more datasets – approximately three orders of
+            magnitude greater.
+        </p>
+        <h2>
+            Problem Definition
+        </h2>
+        <p>
+            Over the past few years, Georgia Tech has seen a surge in malicious emails
+            targeting the student body. These emails often masquerade as being sent from a trusted
+            source such as the IT department or an administrative office on campus. These phishing
+            attempts commonly include urgent notifications about a student's account, such
+            as a full Outlook inbox, mandatory password resets, or waitlist status updates. These
+            emails aim to create a sense of urgency for the students so they act quickly and click
+            the embedded link. <br> <br>
+            Once the link is clicked, students are prompted to log in through the Georgia Tech SSO
+            portal. The process appears legitimate, so students do not hesitate to enter their authentication
+            credentials to resolve the problem. Instead of redirecting the student to the service
+            responsible for the emails, students are typically redirected to OSCAR or a different
+            landing page - having no connection with the problem the student is experiencing. Student data
+            is captured by this fraudulent site in its backend operations, thereby compromising the
+            security of the account of the student in real time. <br><br>
+            The consequences of a security breach involving Institute log-in information are serious.
+            Compromised accounts could grant unauthorized access to sensitive academic records,
+            personal information, financial details, or highly regulated services such as the AI-Makerspace.
+            Furthermore, bad actors could use these accounts to execute further phishing campaigns, 
+            malware distribution, or identity theft. We recognize the need for effective mechanisms of
+            detection and prevention against these types of attacks to protect the Georgia Tech community.<br><br>
+            We wish to meet this growing trend of cybersecurity threats with a supervised machine-learning
+            model that will be capable of detecting embedded links within emails and other forms of 
+            digital communication that is potentially malicious. 
+        </p>
+        <h2>
+            Methods
+        </h2>
+        <h3>
+            Dataset
+        </h3>
+        <p>
+            We utilized the
+            <strong>
+                Malicious URLs Dataset
+            </strong>
+            from Kaggle, which contains a variety of URLs labeled as benign, phishing,
+            malware, or defacement. The dataset provides numerous examples
+            for both malicious and benign URLs, making it suitable for training and
+            evaluating our model.
+        </p>
+        <h3>
+            Data Preprocessing
+        </h3>
+        <h4>
+            Feature Extraction
+        </h4>
+        <p>
+            To convert URLs into a format suitable for machine learning algorithms,
+            we extracted several features that could potentially indicate malicious
+            intent [6]:
+        </p>
+        <ul>
+            <li>
+                <strong>
+                    Length-Based Features:
+                </strong>
+                <ul>
+                    <li>
+                        <code>
+                            url_length
+                        </code>
+                        : Total length of the URL.
+                    </li>
+                    <li>
+                        <code>
+                            domain_length
+                        </code>
+                        : Length of the domain part of the URL.
+                    </li>
+                    <li>
+                        <code>
+                            path_length
+                        </code>
+                        : Length of the path after the domain.
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <strong>
+                    Character-Based Features:
+                </strong>
+                <ul>
+                    <li>
+                        <code>
+                            num_digits
+                        </code>
+                        : Number of digits in the URL.
+                    </li>
+                    <li>
+                        <code>
+                            num_special
+                        </code>
+                        : Number of special characters (non-alphanumeric).
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <strong>
+                    Domain-Based Features:
+                </strong>
+                <ul>
+                    <li>
+                        <code>
+                            num_dots
+                        </code>
+                        : Number of dots in the URL.
+                    </li>
+                    <li>
+                        <code>
+                            num_hyphens
+                        </code>
+                        : Number of hyphens.
+                    </li>
+                    <li>
+                        <code>
+                            num_underscores
+                        </code>
+                        : Number of underscores.
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <strong>
+                    Path-Based Features:
+                </strong>
+                <ul>
+                    <li>
+                        <code>
+                            num_slashes
+                        </code>
+                        : Number of slashes.
+                    </li>
+                    <li>
+                        <code>
+                            num_params
+                        </code>
+                        : Number of URL parameters.
+                    </li>
+                    <li>
+                        <code>
+                            has_query
+                        </code>
+                        : Presence of a query string (1 if present, 0 otherwise).
+                    </li>
+                </ul>
+            </li>
+        </ul>
+        <div class="code-block">
+            <pre>
+                <code>
+                    # Feature extraction function
+                    def extract_url_features(url):
+                        """Extract features from URLs"""
+                        features = {}
+                    
+                        # Parse URL
+                        parsed = urlparse(url)
+                    
+                        # Length-based features
+                        features['url_length'] = len(url)
+                        features['domain_length'] = len(parsed.netloc)
+                        features['path_length'] = len(parsed.path)
+                    
+                        # Character-based features
+                        features['num_digits'] = sum(c.isdigit() for c in url)
+                        features['num_special'] = len(re.findall('[^A-Za-z0-9]', url))
+                    
+                        # Domain-based features
+                        features['num_dots'] = url.count('.')
+                        features['num_hyphens'] = url.count('-')
+                        features['num_underscores'] = url.count('_')
+                    
+                        # Path-based features
+                        features['num_slashes'] = url.count('/')
+                        features['num_params'] = len(parsed.params)
+                        features['has_query'] = int(len(parsed.query) > 0)
+                    
+                        return features
+                </code>
+            </pre>
+        </div>
+        <h4>
+            Encoding Labels
+        </h4>
+        <p>
+            We converted the categorical labels (
+            <code>
+                'benign'
+            </code>
+            ,
+            <code>
+                'phishing'
+            </code>
+            ,
+            <code>
+                'malware'
+            </code>
+            ,
+            <code>
+                'defacement'
+            </code>
+            ) into numerical format using label encoding, which is necessary for training
+            the machine learning model.
+        </p>
+        <div class="code-block">
+            <pre>
+                <code>
+                    # Encode labels
+                    le = LabelEncoder()
+                    y = le.fit_transform(df['type'])
+                </code>
+            </pre>
+        </div>
+        <h3>
+            Machine Learning Model
+        </h3>
+        <p>
+            We implemented two machine learning algorithms:
+        </p>
+        <ol>
+            <li>
+                <strong>
+                    Linear Discriminant Analysis (LDA):
+                </strong>
+                A supervised learning algorithm used for classification that finds a linear
+                combination of features that characterizes or separates two or more classes.
+            </li>
+            <li>
+                <strong>
+                    Logistic Regression:
+                </strong>
+                A statistical model that uses a logistic function to model a binary dependent
+                variable. It was used for binary classification between benign and malicious
+                URLs.
+            </li>
+        </ol>
+        <h3>
+            Model Training and Evaluation
+        </h3>
+        <p>
+            We split the dataset into training and testing sets using an 80-20 
+            split of ~520,000 training data and ~130,000 test data points to 
+            evaluate the model's performance on unseen data [2].
+        </p>
+        <div class="code-block">
+            <pre>
+                <code>
+                    # Split the data
+                    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+                </code>
+            </pre>
+        </div>
+        <p>
+            We then trained the LDA model on the training data and evaluated it using
+            classification metrics and visualizations.
+        </p>
+        <h2>
+            Results and Discussion
+        </h2>
+        <h3>
+            Feature Correlation
+        </h3>
+        <p>
+            Understanding the correlation between features helps in assessing multicollinearity
+            and the potential impact on the model [3].
+        </p>
+        <div class="figure">
+            <img src="images/feature_correlation.png" alt="Feature Correlation Matrix">
+            <p class="figure-caption">
+                <em>
+                    Figure 1: Heatmap showing the correlation between extracted features.
+                </em>
+            </p>
+        </div>
+        <h3>
+            Feature Statistics
+        </h3>
+        <div class="code-block">
+            <pre>
+                <code>
+                    print("\nFeature statistics:")
+                    display(X.describe())
+                </code>
+            </pre>
+        </div>
+        <p>
+            This provides insights into the distribution and range of each feature,
+            which is essential for understanding the data and potential preprocessing
+            steps like normalization or scaling.
+        </p>
+        <h3>
+            Feature Distributions
+        </h3>
+        <div class="figure">
+            <img src="images/feature_distributions.png" alt="Feature Distributions">
+            <p class="figure-caption">
+                <em>
+                    Figure 2: Boxplots showing the distribution of each feature.
+                </em>
+            </p>
+        </div>
+        <h3>
+            Model Performance
+        </h3>
+        <h4>
+            Classification Report [5]
+        </h4>
+        <div class="code-block">
+            <pre>
+                <code>
+                    print("\nClassification Report:") 
+                    print(classification_report(y_test, y_pred, target_names=le.classes_))
+                </code>
+            </pre>
+        </div>
+        <p>
+            <strong>
+                Output:
+            </strong>
+        </p>
+        <pre>
+            <style>
+                table {
+                    width: 50%;
+                    border-collapse: collapse;
+                    margin: 20px auto;
+                    font-family: Arial, sans-serif;
+                }
+                th, td {
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                    text-align: center;
+                }
+                th {
+                    background-color: #f2f2f2;
+                }
+                caption {
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                }
+            </style>
+            <table>
+                <caption>Classification Report</caption>
+                <tr>
+                    <th>Class</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1-Score</th>
+                    <th>Support</th>
+                </tr>
+                <tr>
+                    <td>benign</td>
+                    <td>0.84</td>
+                    <td>0.97</td>
+                    <td>0.90</td>
+                    <td>85778</td>
+                </tr>
+                <tr>
+                    <td>defacement</td>
+                    <td>0.74</td>
+                    <td>0.85</td>
+                    <td>0.79</td>
+                    <td>19104</td>
+                </tr>
+                <tr>
+                    <td>malware</td>
+                    <td>0.63</td>
+                    <td>0.59</td>
+                    <td>0.61</td>
+                    <td>6521</td>
+                </tr>
+                <tr>
+                    <td>phishing</td>
+                    <td>0.24</td>
+                    <td>0.03</td>
+                    <td>0.06</td>
+                    <td>18836</td>
+                </tr>
+                <tr>
+                    <td colspan="5"></td>
+                </tr>
+                <tr>
+                    <td>accuracy</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>0.80</td>
+                    <td>130239</td>
+                </tr>
+                <tr>
+                    <td>macro avg</td>
+                    <td>0.61</td>
+                    <td>0.61</td>
+                    <td>0.59</td>
+                    <td>130239</td>
+                </tr>
+                <tr>
+                    <td>weighted avg</td>
+                    <td>0.73</td>
+                    <td>0.80</td>
+                    <td>0.75</td>
+                    <td>130239</td>
+                </tr>
+            </table>
+        </pre>
+        <p>
+            The model achieves an overall accuracy of
+            <strong>
+                92%
+            </strong>
+            , with particularly high precision and recall for benign URLs; out of 3,093 test instances, 2,841 were correctly predicted as their true class.
+        </p>
+        <h4>
+            Confusion Matrix
+        </h4>
+        <div class="figure">
+            <img src="images/confusion_matrix.png" alt="Confusion Matrix">
+            <p class="figure-caption">
+                <em>
+                    Figure 3: Confusion matrix displaying the model's performance across different
+                    classes.
+                </em>
+            </p>
+        </div>
+        <h4>
+            Feature Importance
+        </h4>
+        <p>
+            Analyzing the coefficients from the LDA model provides insights into which
+            features are most influential in distinguishing between classes.
+        </p>
+        <div class="figure">
+            <img src="images/feature_importance.png" alt="Feature Importance">
+            <p class="figure-caption">
+                <em>
+                    Figure 4: Bar chart showing the importance of each feature based on the
+                    LDA coefficients.
+                </em>
+            </p>
+        </div>
+        <h4>
+            LDA Transformation Visualization
+        </h4>
+        <p>
+            If the data after LDA transformation is 2D or 3D, we can visualize it
+            to understand how well the classes are separated.
+        </p>
+        <div class="figure">
+            <img src="images/lda_transformation.png" alt="LDA Transformation of URLs">
+            <p class="figure-caption">
+                <em>
+                    Figure 5: Scatter plot of the URLs after LDA transformation.
+                </em>
+            </p>
+        </div>
+        <h3>
+            Example Predictions
+        </h3>
+        <p>
+            We tested the model on new URLs to see how it performs in real-world scenarios.
+        </p>
+        <div class="code-block">
+            <pre>
+                <code>
+                    # Example of predicting new URLs
+                    def predict_url(url, model, label_encoder):
+                        """Predict the class of a single URL"""
+                        features = extract_url_features(url)
+                        features_df = pd.DataFrame([features])
+                        prediction = model.predict(features_df)
+                        return label_encoder.inverse_transform(prediction)[0]
+                    
+                    # Example usage
+                    example_urls = [
+                        'http://normal.com',
+                        'http://suspicious-site.com/login/verify?token=123456',
+                    ]
+                    
+                    print("\nExample predictions:")
+                    for url in example_urls:
+                        prediction = predict_url(url, lda, le)
+                        print(f"URL: {url}")
+                        print(f"Predicted class: {prediction}\n")
+                </code>
+            </pre>
+        </div>
+        <p>
+            <strong>
+                Output:
+            </strong>
+        </p>
+        <pre>
+            Example predictions:
+            URL: http://normal.com
+            Predicted class: phishing
+
+            URL: http://suspicious-site.com/login/verify?token=123456
+            Predicted class: defacement
+        </pre>
+        <h3>
+            Binary Classification with Logistic Regression
+        </h3>
+        <p>
+            To simplify the problem, we converted it into a binary classification
+            task by labeling all non-benign URLs as malicious. <br> <br>
+
+            <i>
+                Note: Progress on this model was started recently. We have only just began the process
+                of optimization and analysis.
+            </i>
+        </p>
+        <div class="code-block">
+            <pre>
+                <code>
+                    # Prepare binary target
+                    df['binary_type'] = df['type'].apply(lambda x: 1 if x == 'benign' else 0)
+                    X = pd.DataFrame(features_list)  # Use extracted features
+                    y = df['binary_type']
+                    
+                    # Split data
+                    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+                </code>
+            </pre>
+        </div>
+        <h4>
+            Model Training and Accuracy
+        </h4>
+        <div class="code-block">
+            <pre>
+                <code>
+                    # Train and evaluate logistic regression
+                    model = LogisticRegression(solver = 'saga', max_iter = 5000, tol = 1e-4, C = 0.1)
+                    model.fit(X_train, y_train)
+                    print("Accuracy:", accuracy_score(y_test, model.predict(X_test)))
+                </code>
+            </pre>
+        </div>
+        <p>
+            <strong>
+                Output:
+            </strong>
+        </p>
+        <pre>
+            Accuracy: 0.8660616251660409
+        </pre>
+        <p>
+            The logistic regression model achieved an accuracy of
+            <strong>
+                86.6%
+            </strong>
+            , indicating its effectiveness in distinguishing between benign and malicious
+            URLs.
+        </p>
+        <h2>
+            Next Steps
+        </h2>
+        <ul>
+            <li>
+                <strong>Logistic Regression Improvement:</strong>
+                Explore optimization techniques for Logistic Regression to boost model accuracy. Develop  documentation and perform  data analysis to support and validate these improvements.
+            </li>
+            <li>
+                <strong>Neural Network Development:</strong>
+                Implement a Neural Network as our third predictive model. Optimize its hyperparameters and evaluate its performane to determine accuracy compared to existing models [4].
+            </li>
+            <li>
+                <strong>Imbalanced Data Handling:</strong>
+                Address class imbalance in the dataset by applying techniques such as SMOTE (Synthetic Minority Over-sampling Technique). This approach aims to enhance model performance on minority classes, ensuring more accurate and equitable predictions across all categories.
+            </li>
+            <li>
+                <strong>Enhanced Feature Extraction:</strong>
+                Investigate potential alternative methods of feature extraction such as incorporating advanced lexical analysis, WHOIS data, domain history, and content-based attributes to improve model accuracy and adaptability.
+            </li>
+        </ul>
+        <h2>Project Timeline</h2>
+        <div class="figure">
+            <img src="images/gantt_chart.png" alt="Gantt Chart">
+            <p class="figure-caption">
+                <em>Figure 6: Gantt chart showing the project timeline.</em>
+            </p>
+        </div>
+
+        <h2>Group Contributions</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Group Member</th>
+                    <th>Contributions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Eickman, William</td>
+                    <td>Spearheaded data preprocessing and LDA implementation</td>
+                </tr>
+                <tr>
+                    <td>De Jesus, Karla</td>
+                    <td>Tested/evaluated dataset and assisted in LDA implementation </td>
+                </tr>
+                <tr>
+                    <td>Fromond, Devin</td>
+                    <td>Selected dataset and developed GitHub pages deliverable</td>
+                </tr>
+                <tr>
+                    <td>Njoku, Adaora</td>
+                    <td>Optimized model implementation and assisted in troubleshooting</td>
+                </tr>
+                <tr>
+                    <td>Parker, Christopher</td>
+                    <td>Implemented Linear Regression and assisted in data preprocessing</td>
+                </tr>
+            </tbody>
+        </table>
+        <h2>
+            References
+        </h2>
+        <ol style="list-style-type: none; padding-left: 0;">
+            <li style="padding-left: 2em; text-indent: -2em;">
+                [1] M. Siddhartha, “Malicious URLs dataset,” Kaggle.com, 2016. Accessed Oct. 04, 2024. 
+                <a href="https://www.kaggle.com/datasets/sid321axn/malicious-urls-dataset">https://www.kaggle.com/datasets/sid321axn/malicious-urls-dataset</a>.
+            </li>
+            <li style="padding-left: 2em; text-indent: -2em;">
+                [2] N. Buhl, “Training, Validation, Test Split for Machine Learning Datasets,” Encord.com, Jun. 13, 2023. Accessed Nov. 04, 2024. 
+                <a href="https://encord.com/blog/train-val-test-split/">https://encord.com/blog/train-val-test-split/</a>.
+            </li>
+            <li style="padding-left: 2em; text-indent: -2em;">
+                [3] Z. Luna, “Feature Selection in Machine Learning: Correlation Matrix | Univariate Testing | RFECV,” Medium, Jul. 27, 2021. Accessed Nov. 07, 2024. 
+                <a href="https://medium.com/geekculture/feature-selection-in-machine-learning-correlation-matrix-univariate-testing-rfecv-1186168fac12">https://medium.com/geekculture/feature-selection-in-machine-learning-correlation-matrix-univariate-testing-rfecv-1186168fac12</a>.
+            </li>
+            <li style="padding-left: 2em; text-indent: -2em;">
+                [4] Scikit-learn, “4.6. Neural Network Models (Supervised),” Accessed Oct. 04, 2024. 
+                <a href="https://scikitlearn.org/stable/modules/neural_networks_supervised.html">https://scikitlearn.org/stable/modules/neural_networks_supervised.html</a>.
+            </li>
+            <li style="padding-left: 2em; text-indent: -2em;">
+                [5] A. Kharwal, “Classification Report in Machine Learning | Aman Kharwal,” The Clever Programmer, Jul. 07, 2021. Accessed Nov. 12, 2024. 
+                <a href="https://thecleverprogrammer.com/2021/07/07/classification-report-in-machine-learning/">https://thecleverprogrammer.com/2021/07/07/classification-report-in-machine-learning/</a>.
+            </li>
+            <li style="padding-left: 2em; text-indent: -2em;">
+                [6] Scikit-learn, “6.3. Preprocessing Data,” Accessed Oct. 04, 2024. 
+                <a href="https://scikitlearn.org/stable/modules/preprocessing.html">https://scikitlearn.org/stable/modules/preprocessing.html</a>.
+            </li>
+            <li style="padding-left: 2em; text-indent: -2em;">
+                [7] C. Chong, D. Liu, W. Lee, and Neustar, “Malicious URL Detection.” Accessed Oct. 04, 2024. Available: 
+                <a href="https://cs229.stanford.edu/proj2012/ChongLiu-MaliciousURLDetection.pdf">https://cs229.stanford.edu/proj2012/ChongLiu-MaliciousURLDetection.pdf</a>.
+            </li>
+        </ol>        
+        <hr>
+    </body>
+
+</html>
