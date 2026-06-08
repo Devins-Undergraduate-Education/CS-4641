@@ -1,13 +1,7 @@
 ﻿# Machine Learning (CS 4641)
 
-Machine learning coursework with Python notebooks, model implementations, datasets, and a group project covering supervised learning, clustering, dimensionality reduction, neural networks, and evaluation workflows.
+Coursework archive for Georgia Tech CS 4641, including project, lab, homework, and assignment materials kept for undergraduate education documentation.
 
-## Included Materials
+## Notes
 
-- Machine learning homework notebooks
-- Python implementations and datasets
-- Group project website and visualizations
-
-## Archive Notes
-
-This repository was prepared for public documentation and archival purposes. Generated dependency folders, nested Git metadata, local build outputs, compressed archives, OS metadata, and grade calculator files were excluded during preparation.
+Generated dependency folders, nested Git metadata, local build outputs, archives, and OS metadata were excluded when this repository was prepared.
